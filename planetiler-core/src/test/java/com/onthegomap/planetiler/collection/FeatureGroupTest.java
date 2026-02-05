@@ -93,7 +93,7 @@ class FeatureGroupTest {
     Map<Integer, Map<String, List<Feature>>> map = new TreeMap<>();
     for (FeatureGroup.TileFeatures tile : features) {
       for (var feature : VectorTile.decode(tile.getVectorTile().encode())) {
-        map.computeIfAbsent(tile.tileCoord().encoded(), (i) -> new TreeMap<>())
+        map.computeIfAbsent((int)tile.tileCoord().encoded(), (i) -> new TreeMap<>())
           .computeIfAbsent(feature.layer(), l -> new ArrayList<>())
           .add(new Feature(feature.tags(), decodeSilently(feature.geometry())));
       }
@@ -107,7 +107,7 @@ class FeatureGroupTest {
     var reader = features.parallelIterator(2);
     for (FeatureGroup.TileFeatures tile : reader.result()) {
       for (var feature : VectorTile.decode(tile.getVectorTile().encode())) {
-        map.computeIfAbsent(tile.tileCoord().encoded(), (i) -> new TreeMap<>())
+        map.computeIfAbsent((int)tile.tileCoord().encoded(), (i) -> new TreeMap<>())
           .computeIfAbsent(feature.layer(), l -> new ArrayList<>())
           .add(new Feature(feature.tags(), decodeSilently(feature.geometry())));
       }
@@ -393,7 +393,7 @@ class FeatureGroupTest {
       for (byte layer : layers) {
         for (int sortKey : sortKeys) {
           for (boolean hasGroup : hasGroups) {
-            long key = FeatureGroup.encodeKey(tile.encoded(), layer, sortKey, hasGroup);
+            long key = FeatureGroup.encodeKey((int)tile.encoded(), layer, sortKey, hasGroup);
             result.add(dynamicTest(tile + " " + layer + " " + sortKey + " " + hasGroup, () -> {
               assertEquals(tile.encoded(), FeatureGroup.extractTileFromKey(key), "tile");
               assertEquals(layer, FeatureGroup.extractLayerIdFromKey(key), "layer");

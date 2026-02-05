@@ -94,7 +94,7 @@ public class VectorTile {
   private static final Logger LOGGER = LoggerFactory.getLogger(VectorTile.class);
 
   // TODO make these configurable
-  private static final int EXTENT = 4096;
+  private static final int EXTENT = 65536;
   private static final double SIZE = 256d;
   // use a treemap to ensure that layers are encoded in a consistent order
   private final Map<String, Layer> layers = new TreeMap<>();

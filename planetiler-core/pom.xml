@@ -22,6 +22,7 @@
     <!-- needs to match CEL -->
     <protobuf.version>4.33.3</protobuf.version>
     <geopackage.version>6.6.5</geopackage.version>
+    <jts.version>1.20.0</jts.version>
   </properties>
 
   <dependencies>

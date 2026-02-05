@@ -196,7 +196,25 @@ public class TiledGeometry {
    */
   static TiledGeometry sliceIntoTiles(List<List<CoordinateSequence>> groups, double buffer, boolean area, int z,
     TileExtents.ForZoom extents) throws GeometryException {
+    double oldBuffer = buffer;
+
+    if (oldBuffer >= 1) {
+      buffer = 4. / 256.;
+    }
     TiledGeometry result = new TiledGeometry(extents, buffer, z, area);
+
+    // Building outlines
+    if (oldBuffer == 1) {
+      result.addWorldCopy(groups, 0.05);
+      return result;
+    }
+
+    // Building parts
+    if (oldBuffer == 2) {
+      result.addWorldCopy(groups, 1.5);
+      return result;
+    }
+
     EnumSet<Direction> wrapResult = result.sliceWorldCopy(groups, 0);
     if (wrapResult.contains(Direction.RIGHT)) {
       result.sliceWorldCopy(groups, -result.maxTilesAtThisZoom);
@@ -374,6 +392,91 @@ public class TiledGeometry {
           }
         }
       }
+      addShapeToResults(inProgressShapes);
+    }
+
+    return overflow;
+  }
+
+  private static void globalPolygonToLocal(
+    List<CoordinateSequence> polygon,
+    int tileX,
+    int tileY,
+    List<CoordinateSequence> toAddTo
+  ) {
+    for (var ring : polygon) {
+      var coords = ring.toCoordinateArray();
+      var newRing = new MutableCoordinateSequence();
+
+      for (var point : coords) {
+        double localX = point.x - tileX;
+        double localY = point.y - tileY;
+
+        localX *= 256d;
+        localY *= 256d;
+
+        newRing.addPoint(localX, localY);
+      }
+
+      toAddTo.add(newRing);
+    }
+  }
+
+  private EnumSet<Direction> addWorldCopy(List<List<CoordinateSequence>> groups, double buffer) throws GeometryException {
+    EnumSet<Direction> overflow = EnumSet.noneOf(Direction.class);
+
+    List<int[]> boxes = new ArrayList<>();
+
+    for (List<CoordinateSequence> group : groups) {
+      double minX = Double.POSITIVE_INFINITY;
+      double maxX = Double.NEGATIVE_INFINITY;
+      double minY = Double.POSITIVE_INFINITY;
+      double maxY = Double.NEGATIVE_INFINITY;
+
+      var outer = group.get(0);
+
+      if (outer == null) {
+        continue;
+      }
+
+      for (int j = 0; j < outer.size(); j++) {
+        double x = outer.getX(j);
+        double y = outer.getY(j);
+
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+
+      int tileMinX = (int) Math.floor(minX - buffer);
+      int tileMaxX = (int) Math.floor(maxX + buffer);
+      int tileMinY = (int) Math.floor(minY - buffer);
+      int tileMaxY = (int) Math.floor(maxY + buffer);
+
+      boxes.add(new int[] { tileMinX, tileMaxX, tileMinY, tileMaxY });
+    }
+
+    for (List<CoordinateSequence> group : groups) {
+      Map<TileCoord, List<CoordinateSequence>> inProgressShapes = new HashMap<>();
+
+      for (var box : boxes) {
+        int tileMinX = box[0];
+        int tileMaxX = box[1];
+        int tileMinY = box[2];
+        int tileMaxY = box[3];
+
+        for (int tileX = tileMinX; tileX <= tileMaxX; tileX++) {
+          for (int tileY = tileMinY; tileY <= tileMaxY; tileY++) {
+            TileCoord tileID = TileCoord.ofXYZ(tileX, tileY, z);
+
+            List<CoordinateSequence> toAddTo = inProgressShapes.computeIfAbsent(tileID, name -> new ArrayList<>());
+
+            globalPolygonToLocal(group, tileX, tileY, toAddTo);
+          }
+        }
+      }
+
       addShapeToResults(inProgressShapes);
     }
 

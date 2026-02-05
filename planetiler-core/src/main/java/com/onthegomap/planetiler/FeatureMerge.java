@@ -193,7 +193,7 @@ public class FeatureMerge {
         result.add(feature1);
       } else {
         LoopLineMerger merger = new LoopLineMerger()
-          .setTolerance(tolerance)
+          //.setTolerance(tolerance) // TODO Change in profile instead
           .setMergeStrokes(true)
           .setMinLength(lengthLimit)
           .setLoopMinLength(lengthLimit)

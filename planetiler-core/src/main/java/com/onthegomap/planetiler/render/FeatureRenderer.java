@@ -71,6 +71,9 @@ public class FeatureRenderer implements Consumer<FeatureCollector.Feature>, Clos
     // geometries are filtered by min size after processing before they are emitted, but do cheap pre-filtering here
     // to avoid processing features that won't emit anything
     for (int zoom = feature.getMaxZoom(); zoom >= feature.getMinZoom(); zoom--) {
+      if (feature.getZoomLevels() != null && !feature.getZoomLevels().contains(zoom)) {
+        continue;
+      }
       double scale = 1 << zoom;
       double minSize = feature.getMinPixelSizeAtZoom(zoom);
       if (feature.hasLinearRanges()) {
@@ -103,9 +106,9 @@ public class FeatureRenderer implements Consumer<FeatureCollector.Feature>, Clos
     GeometryPipeline pipeline = feature.getScaledGeometryTransformAtZoom(zoom);
     if (pipeline != null) {
       geom = pipeline.apply(geom);
-    } else if (!(geom instanceof Puntal)) {
+    } /*else if (!(geom instanceof Puntal)) {
       geom = GeometryPipeline.defaultSimplify(feature).apply(zoom).apply(geom);
-    }
+    }*/
 
     renderGeometry(zoom, geom, attrs, feature);
   }
