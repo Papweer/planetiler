@@ -1,4 +1,4 @@
-package com.onthegomap.planetiler.examples;
+package com.onthegomap.planetiler.examples.parsers;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 public class ColorParser {
   private final HashMap<String, Integer> colorList = new HashMap<>();
 
-  ColorParser() {
+  public ColorParser() {
     initColorList();
   }
 

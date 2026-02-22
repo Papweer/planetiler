@@ -1,4 +1,4 @@
-package com.onthegomap.planetiler.examples;
+package com.onthegomap.planetiler.examples.parsers;
 
 import java.util.HashMap;
 import java.util.Map;

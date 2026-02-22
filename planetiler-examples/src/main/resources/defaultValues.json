@@ -1,0 +1,166 @@
+{
+  "paths": {
+    "residential": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": true
+    },
+    "service": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": false
+    },
+    "track": {
+      "type": "roadway",
+      "material": "dirt",
+      "lanes": 1,
+      "markings": false
+    },
+    "unclassified": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": false
+    },
+    "tertiary": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": true
+    },
+    "secondary": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": true
+    },
+    "primary": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": true
+    },
+    "living_street": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": false
+    },
+    "trunk": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": true
+    },
+    "motorway": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 2,
+      "markings": true
+    },
+    "motorway_link": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "trunk_link": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "primary_link": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "secondary_link": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "tertiary_link": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "busway": {
+      "type": "roadway",
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "raceway": {
+      "type": "roadway",
+      "width": 6,
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": false
+    },
+    "footway": {
+      "type": "footway",
+      "material": "dirt",
+      "lanes": 1,
+      "markings": false
+    },
+    "path": {
+      "type": "footway",
+      "material": "dirt",
+      "lanes": 1,
+      "markings": false
+    },
+    "steps": {
+      "type": "footway",
+      "material": "dirt",
+      "lanes": 1,
+      "markings": false
+    },
+    "pedestrian": {
+      "type": "footway",
+      "material": "dirt",
+      "lanes": 1,
+      "markings": false
+    },
+    "cycleway": {
+      "type": "cycleway",
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "runway": {
+      "type": "runway",
+      "width": 45,
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "taxiway": {
+      "type": "runway",
+      "width": 20,
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    },
+    "stopway" : {
+      "type": "stopway",
+      "width": 45,
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true,
+      "colour": "yellow"
+    },
+    "model_runway": {
+      "type": "runway",
+      "width": 2,
+      "material": "asphalt",
+      "lanes": 1,
+      "markings": true
+    }
+  }
+}

@@ -1,27 +1,50 @@
-package com.onthegomap.planetiler.examples;
+package com.onthegomap.planetiler.examples.utils;
 
+import com.onthegomap.planetiler.FeatureCollector;
+import com.onthegomap.planetiler.examples.parsers.ColorParser;
+import com.onthegomap.planetiler.examples.parsers.DefaultsParser;
+import com.onthegomap.planetiler.examples.parsers.DirectionParser;
+import com.onthegomap.planetiler.examples.parsers.TypeParser;
 import com.onthegomap.planetiler.reader.SourceFeature;
+import com.onthegomap.planetiler.reader.osm.OsmElement;
+import com.onthegomap.planetiler.reader.osm.OsmSourceFeature;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
-class RoadwayLanes {
-  Integer both = null;
-  Integer forward = null;
-  Integer backward = null;
-}
-
-enum RoadwayExtensionSide {
-  LEFT,
-  RIGHT,
-  BOTH
-}
 
 public class StreetsUtils {
-  private static ColorParser colorParser = new ColorParser();
+  private static final ColorParser colorParser = new ColorParser();
+  private static final DefaultsParser defaultsParser = new DefaultsParser();
 
   private static final List<String> memorialTypes = Arrays.asList(
     "war_memorial", "stele", "obelisk", "memorial", "stone"
   );
+
+  public static Optional<String> getOptionalTag(SourceFeature sourceFeature, String tag) {
+    return Optional.ofNullable((String) sourceFeature.getTag(tag));
+  }
+  public static Optional<Integer> getOptionalIntTag(SourceFeature sourceFeature, String tag) {
+    return Optional.ofNullable(TypeParser.parseInt((String) sourceFeature.getTag(tag)));
+  }
+
+  public static Optional<Integer> getOptionalUnsignedIntTag(SourceFeature sourceFeature, String tag) {
+    return Optional.ofNullable(TypeParser.parseUnsignedInt((String) sourceFeature.getTag(tag)));
+  }
+
+  public static Optional<Boolean> getOptionalBoolTag(SourceFeature sourceFeature, String tag) {
+      return Optional.ofNullable(TypeParser.parseBool((String) sourceFeature.getTag(tag)));
+  }
+
+  public static Boolean orNullBooleans(Boolean... values) {
+    Boolean result = null;
+    for (Boolean v : values) {
+      if (Boolean.TRUE.equals(v)) return true;  // can't get better, short-circuit
+      if (Boolean.FALSE.equals(v)) result = false; // upgrade from null, but keep looking
+    }
+    return result;
+  }
 
   public static boolean isMemorial(SourceFeature sourceFeature) {
     String memorialType = (String) sourceFeature.getTag("memorial");
@@ -68,32 +91,6 @@ public class StreetsUtils {
         sourceFeature.hasTag("leisure", "swimming_pool") &&
         !sourceFeature.hasTag("location", "indoor", "roof")
       );
-  }
-
-  public static Boolean isRoadwayOneway(SourceFeature sourceFeature) {
-    String oneway = (String) sourceFeature.getTag("oneway", "");
-
-    if (oneway.equals("no")) {
-      return false;
-    }
-
-    if (oneway.equals("yes") || sourceFeature.hasTag("junction", "roundabout")) {
-      return true;
-    }
-
-    return null;
-  }
-
-  public static RoadwayLanes getRoadwayLanes(SourceFeature sourceFeature) {
-    Integer lanes = parseUnsignedInt((String) sourceFeature.getTag("lanes"));
-    Integer lanesForward = parseUnsignedInt((String) sourceFeature.getTag("lanes:forward"));
-    Integer lanesBackward = parseUnsignedInt((String) sourceFeature.getTag("lanes:backward"));
-
-    return new RoadwayLanes() {{
-      both = lanes;
-      forward = lanesForward;
-      backward = lanesBackward;
-    }};
   }
 
   public static String getFenceType(SourceFeature sourceFeature) {
@@ -143,22 +140,22 @@ public class StreetsUtils {
     String estHeight = (String) sourceFeature.getTag("est_height");
 
     if (height != null) {
-      return parseMeters(height);
+      return TypeParser.parseMeters(height);
     }
 
-    return parseMeters(estHeight);
+    return TypeParser.parseMeters(estHeight);
   }
 
   public static Double getMinHeight(SourceFeature sourceFeature) {
-    return parseMeters((String) sourceFeature.getTag("min_height"));
+    return TypeParser.parseMeters((String) sourceFeature.getTag("min_height"));
   }
 
   public static Double getRoofHeight(SourceFeature sourceFeature) {
-    return parseMeters((String) sourceFeature.getTag("roof:height"));
+    return TypeParser.parseMeters((String) sourceFeature.getTag("roof:height"));
   }
 
   public static Integer getRoofLevels(SourceFeature sourceFeature) {
-    return parseUnsignedInt((String) sourceFeature.getTag("roof:levels"));
+    return TypeParser.parseUnsignedInt((String) sourceFeature.getTag("roof:levels"));
   }
 
   public static String getRoofMaterial(SourceFeature sourceFeature) {
@@ -174,11 +171,11 @@ public class StreetsUtils {
   }
 
   public static Integer getBuildingLevels(SourceFeature sourceFeature) {
-    return parseUnsignedInt((String) sourceFeature.getTag("building:levels"));
+    return TypeParser.parseUnsignedInt((String) sourceFeature.getTag("building:levels"));
   }
 
   public static Integer getBuildingMinLevel(SourceFeature sourceFeature) {
-    return parseUnsignedInt((String) sourceFeature.getTag("building:min_level"));
+    return TypeParser.parseUnsignedInt((String) sourceFeature.getTag("building:min_level"));
   }
 
   public static Integer getBuildingColor(SourceFeature sourceFeature) {
@@ -201,8 +198,8 @@ public class StreetsUtils {
     return null;
   }
 
-  public static Double getWidth(SourceFeature sourceFeature) {
-    return parseDouble((String) sourceFeature.getTag("width"));
+  public static Optional<Double> getWidth(SourceFeature sourceFeature) {
+    return Optional.ofNullable(TypeParser.parseDouble((String) sourceFeature.getTag("width")));
   }
 
   public static Double getDirection(SourceFeature sourceFeature) {
@@ -214,7 +211,7 @@ public class StreetsUtils {
   }
 
   public static Double getAngle(SourceFeature sourceFeature) {
-    return parseDouble((String) sourceFeature.getTag("angle"));
+    return TypeParser.parseDouble((String) sourceFeature.getTag("angle"));
   }
 
   public static String getLeafType(SourceFeature sourceFeature) {
@@ -230,8 +227,8 @@ public class StreetsUtils {
     return genusValue != null ? genusValue : genusEngValue;
   }
 
-  public static String getSurface(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("surface"));
+  public static Optional<String> getSurface(SourceFeature sourceFeature) {
+    return Optional.ofNullable(getFirstTagValue((String) sourceFeature.getTag("surface")));
   }
 
   public static String getGauge(SourceFeature sourceFeature) {
@@ -253,89 +250,8 @@ public class StreetsUtils {
     return getFirstTagValue((String) sourceFeature.getTag("support"));
   }
 
-  public static Boolean getLaneMarkings(SourceFeature sourceFeature) {
-    String value = (String) sourceFeature.getTag("lane_markings", "");
-
-    if (value.equals("yes")) {
-      return true;
-    }
-
-    if (value.equals("no")) {
-      return false;
-    }
-
-    return null;
-  }
-
   public static String getCrop(SourceFeature sourceFeature) {
     return getFirstTagValue((String) sourceFeature.getTag("crop"));
-  }
-
-  public static Double parseDouble(String value) {
-    if (value == null) return null;
-
-    try {
-      return Double.parseDouble(value);
-    } catch (Exception ex) {
-      return null;
-    }
-  }
-
-  public static Integer parseUnsignedInt(String value) {
-    if (value == null) return null;
-
-    try {
-      return Math.max(0, (int) Double.parseDouble(value));
-    } catch (Exception ex) {
-      return null;
-    }
-  }
-
-  public static Double parseUnits(String str, double defaultUnitsFactor) {
-    if (str == null) return null;
-
-    str = str
-      .replaceAll(",", ".")
-      .replaceAll(" ", "")
-      .replaceAll("ft", "'")
-      .replaceAll("feet", "'");
-
-    if (str.contains("cm")) {
-      Double cms = parseDouble(str.replace("cm", ""));
-      return cms != null ? cms * 0.01 : null;
-    } else if (str.contains("m")) {
-      return parseDouble(str.replace("m", ""));
-    } else if (str.contains("'")) {
-      String[] parts = str.split("'");
-
-      if (parts.length == 0) return null;
-
-      Double feet = parseDouble(parts[0]);
-      Double inches = null;
-
-      if (parts.length > 1) {
-        inches = parseDouble(parts[1]);
-      }
-
-      if (feet == null) feet = 0d;
-      if (inches == null) inches = 0d;
-
-      return (feet * 12 + inches) * 0.0254;
-    } else if (str.contains("\"")) {
-      Double inches = parseDouble(str.replace("\"", ""));
-      return inches != null ? inches * 0.0254 : null;
-    }
-
-    Double parsed = parseDouble(str);
-    return parsed != null ? parsed * defaultUnitsFactor : null;
-  }
-
-  public static Double parseMeters(String str) {
-    return parseUnits(str, 1d);
-  }
-
-  public static Double parseMillimeters(String str) {
-    return parseUnits(str, 0.001d);
   }
 
   public static String getFirstTagValue(String value) {
@@ -352,83 +268,8 @@ public class StreetsUtils {
     return values[0].trim().toLowerCase();
   }
 
-  public static RoadwayExtensionSide getSidewalkSide(SourceFeature sourceFeature) {
-    String sidewalkValue = (String)sourceFeature.getTag("sidewalk");
-    String sidewalkBothValue = (String)sourceFeature.getTag("sidewalk:both");
-    String sidewalkLeftValue = (String)sourceFeature.getTag("sidewalk:left");
-    String sidewalkRightValue = (String)sourceFeature.getTag("sidewalk:right");
-
-    sidewalkValue = sidewalkValue == null ? "" : sidewalkValue;
-    sidewalkBothValue = sidewalkBothValue == null ? "" : sidewalkBothValue;
-    sidewalkLeftValue = sidewalkLeftValue == null ? "" : sidewalkLeftValue;
-    sidewalkRightValue = sidewalkRightValue == null ? "" : sidewalkRightValue;
-
-    boolean isBoth = sidewalkBothValue.equals("yes") || sidewalkValue.equals("both");
-    boolean isLeft = isBoth || sidewalkLeftValue.equals("yes") || sidewalkValue.equals("left");
-    boolean isRight = isBoth || sidewalkRightValue.equals("yes") || sidewalkValue.equals("right");
-
-    if (isLeft && isRight) {
-      return RoadwayExtensionSide.BOTH;
-    }
-
-    if (isLeft) {
-      return RoadwayExtensionSide.LEFT;
-    }
-
-    if (isRight) {
-      return RoadwayExtensionSide.RIGHT;
-    }
-
-    return null;
-  }
-
-  public static RoadwayExtensionSide getCyclewaySide(SourceFeature sourceFeature) {
-    String cyclewayBothValue = (String)sourceFeature.getTag("cycleway:both");
-    String cyclewayLeftValue = (String)sourceFeature.getTag("cycleway:left");
-    String cyclewayRightValue = (String)sourceFeature.getTag("cycleway:right");
-
-    cyclewayBothValue = cyclewayBothValue == null ? "" : cyclewayBothValue;
-    cyclewayLeftValue = cyclewayLeftValue == null ? "" : cyclewayLeftValue;
-    cyclewayRightValue = cyclewayRightValue == null ? "" : cyclewayRightValue;
-
-    boolean isBoth = cyclewayBothValue.equals("lane");
-    boolean isLeft = isBoth || cyclewayLeftValue.equals("lane");
-    boolean isRight = isBoth || cyclewayRightValue.equals("lane");
-
-    if (isLeft && isRight) {
-      return RoadwayExtensionSide.BOTH;
-    }
-
-    if (isLeft) {
-      return RoadwayExtensionSide.LEFT;
-    }
-
-    if (isRight) {
-      return RoadwayExtensionSide.RIGHT;
-    }
-
-    return null;
-  }
-
-  public static Integer convertRoadwayExtensionSideToInteger(RoadwayExtensionSide side) {
-    if (side == null) {
-      return null;
-    }
-
-    switch (side) {
-      case LEFT:
-        return 0;
-      case RIGHT:
-        return 1;
-      case BOTH:
-        return 2;
-    }
-
-    return null;
-  }
-
   public static boolean isUnderground(SourceFeature sourceFeature) {
-    Double layer = parseDouble((String) sourceFeature.getTag("layer"));
+    Double layer = TypeParser.parseDouble((String) sourceFeature.getTag("layer"));
 
     if (layer != null && layer < 0) {
       return true;
@@ -479,5 +320,32 @@ public class StreetsUtils {
     }
 
     return null;
+  }
+
+  public static Optional<Boolean> hasMarkings(SourceFeature sourceFeature) {
+    return Optional.ofNullable(orNullBooleans(
+      TypeParser.parseBool((String) sourceFeature.getTag("markings")),
+      TypeParser.parseBool((String) sourceFeature.getTag("lane_markings")),
+      TypeParser.parseBool((String) sourceFeature.getTag("crossing:markings"))
+    ));
+  }
+  public static void setCommonFeatureParams(FeatureCollector.Feature feature, SourceFeature sourceFeature) {
+    if (sourceFeature instanceof OsmSourceFeature osmFeature) {
+      OsmElement element = osmFeature.originalElement();
+
+      feature
+        .setAttr("osmId", sourceFeature.id())
+        .setAttr("osmType", element instanceof OsmElement.Node ? 0 :
+          element instanceof OsmElement.Way ? 1 :
+            element instanceof OsmElement.Relation ? 2 : null
+        );
+    }
+
+    feature
+      .setZoomRange(16, 16)
+      .setPixelToleranceAtAllZooms(0)
+      .setMinPixelSize(0)
+      .setMinPixelSizeAtMaxZoom(0)
+      .setBufferPixels(4);
   }
 }
