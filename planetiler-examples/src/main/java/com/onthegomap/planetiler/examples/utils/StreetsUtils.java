@@ -199,7 +199,11 @@ public class StreetsUtils {
   }
 
   public static Optional<Double> getWidth(SourceFeature sourceFeature) {
-    return Optional.ofNullable(TypeParser.parseDouble((String) sourceFeature.getTag("width")));
+    Double width = TypeParser.parseUnits((String) sourceFeature.getTag("width"), 1.0);
+    if (width == null) {
+      width = TypeParser.parseUnits((String) sourceFeature.getTag("est_width"), 1.0);
+    }
+    return Optional.ofNullable(width);
   }
 
   public static Double getDirection(SourceFeature sourceFeature) {

@@ -134,21 +134,21 @@
       "markings": true
     },
     "runway": {
-      "type": "runway",
+      "type": "aeroway",
       "width": 45,
       "material": "asphalt",
       "lanes": 1,
       "markings": true
     },
     "taxiway": {
-      "type": "runway",
+      "type": "aeroway",
       "width": 20,
       "material": "asphalt",
       "lanes": 1,
       "markings": true
     },
     "stopway" : {
-      "type": "stopway",
+      "type": "aeroway",
       "width": 45,
       "material": "asphalt",
       "lanes": 1,
@@ -156,11 +156,30 @@
       "colour": "yellow"
     },
     "model_runway": {
-      "type": "runway",
+      "type": "aeroway",
       "width": 2,
       "material": "asphalt",
       "lanes": 1,
       "markings": true
     }
+  },
+  "materials": {
+    "asphalt": "asphalt",
+    "paved": "asphalt",
+    "concrete": "concrete",
+    "cobblestone": "cobblestone",
+    "pebblestone": "cobblestone",
+    "paving_stones": "cobblestone",
+    "sett": "cobblestone",
+    "wood": "wood",
+    "dirt": "dirt",
+    "unpaved": "dirt",
+    "ground": "dirt",
+    "gravel": "dirt",
+    "grass": "dirt",
+    "compacted": "dirt",
+    "fine_gravel": "dirt",
+    "earth": "dirt",
+    "sand": "sand"
   }
 }

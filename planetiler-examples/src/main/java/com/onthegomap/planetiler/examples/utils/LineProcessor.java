@@ -7,23 +7,9 @@ import com.onthegomap.planetiler.examples.parsers.DefaultsParser;
 import com.onthegomap.planetiler.examples.parsers.TypeParser;
 import com.onthegomap.planetiler.reader.SourceFeature;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LineProcessor {
   private static final DefaultsParser defaultsParser = new DefaultsParser();
-  private static final Logger log = LoggerFactory.getLogger(LineProcessor.class);
-
-  public static class PathParams {
-    String pathType;
-    Double width;
-    String surface;
-    Integer lanes;
-    Integer lanesForward;
-    Integer lanesBackward;
-    Boolean oneway;
-    Boolean markings;
-  }
 
   public static class RoadwayLanes {
     Integer lanes;
@@ -37,34 +23,53 @@ public class LineProcessor {
       .orElseGet(() -> StreetsUtils.getOptionalTag(sourceFeature, "aeroway")
         .orElseThrow());
 
-    RoadwayLanes roadwayLanes = getRoadwayLanes(sourceFeature, pathType);
+    String pathCategory = defaultsParser.getString("paths."+pathType+".type").orElse("roadway");
 
     var feature = features.line("highways")
       .setAttr("type", "path")
-      .setAttr("pathType", defaultsParser.getString("paths."+pathType+".type").orElse("roadway"))
+      .setAttr("pathCategory", pathCategory)
 
-      .setAttr("surface", StreetsUtils.getSurface(sourceFeature)
-        .orElse(defaultsParser.getString("paths."+pathType+".surface")
-        .orElse("asphalt")))
-
-      .setAttr("width", StreetsUtils.getWidth(sourceFeature)
-        .orElse(defaultsParser.getDouble("paths."+pathType+".width")
-        .orElse(3.0)))
-
-      .setAttr("lanes", roadwayLanes.lanes)
-      .setAttr("lanesForward", roadwayLanes.lanesForward)
-      .setAttr("lanesBackward", roadwayLanes.lanesBackward)
-      .setAttr("oneway", roadwayLanes.oneway)
+      .setAttr("material", getPathMaterial(sourceFeature, pathType))
 
       .setAttr("markings", StreetsUtils.hasMarkings(sourceFeature)
         .orElse(defaultsParser.getBoolean("paths."+pathType+".markings")
-        .orElse(false)))
+        .orElse(false)));
 
-      .setAttr("sidewalkSide", getExtensionSide(sourceFeature, "sidewalk"))
-      .setAttr("cyclewaySide", getExtensionSide(sourceFeature, "cycleway"));
+    if (pathCategory.equals("roadway")) {
+      RoadwayLanes roadwayLanes = getRoadwayLanes(sourceFeature, pathType);
+      Double width = getRoadwayWidth(sourceFeature, pathType, roadwayLanes);
+
+      feature.setAttr("lanes", roadwayLanes.lanes)
+        .setAttr("lanesForward", roadwayLanes.lanesForward)
+        .setAttr("lanesBackward", roadwayLanes.lanesBackward)
+        .setAttr("oneway", roadwayLanes.oneway)
+
+        .setAttr("sidewalkSide", getRoadwayExtensionSide(sourceFeature, "sidewalk"))
+        .setAttr("cyclewaySide", getRoadwayExtensionSide(sourceFeature, "cycleway"))
+
+        .setAttr("width", width);
+
+    } else if (pathCategory.equals("footway")) {
+      feature.setAttr("width", StreetsUtils.getWidth(sourceFeature)
+        .orElse(defaultsParser.getDouble("paths."+pathType+".width")
+          .orElse(2.0)));
+    } else {
+      feature.setAttr("width", StreetsUtils.getWidth(sourceFeature)
+        .orElse(defaultsParser.getDouble("paths."+pathType+".width")
+        .orElse(3.0)));
+    }
 
     StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
     feature.setBufferPixels(24);
+  }
+
+  private static String getPathMaterial(SourceFeature sourceFeature, String pathType) {
+    Optional<String> surface = StreetsUtils.getSurface(sourceFeature);
+    if (surface.isEmpty())  {
+      surface = defaultsParser.getString("paths."+pathType+".surface");
+    }
+
+    return defaultsParser.getString("materials."+surface.orElse("asphalt")).orElse("asphalt");
   }
 
   private static RoadwayLanes getRoadwayLanes(SourceFeature sourceFeature, String pathType) {
@@ -97,7 +102,25 @@ public class LineProcessor {
     return roadwayLanes;
   }
 
-  private static String getExtensionSide(SourceFeature sourceFeature, String extensionFeatureType) {
+  private static Double getRoadwayWidth(SourceFeature sourceFeature, String pathType, RoadwayLanes lanes) {
+    Double tagWidth = TypeParser.parseUnits((String) sourceFeature.getTag("width"), 1.0);
+    if (tagWidth != null) {
+      return tagWidth;
+    }
+    Optional<Double> defaultWidth = defaultsParser.getDouble("paths."+pathType+".width");
+    if (defaultWidth.isPresent()) {
+      return defaultWidth.get();
+    }
+
+    if (lanes.lanes == 1) {
+      return 4.0;
+    } else {
+      return lanes.lanes * 3.0;
+    }
+
+  }
+
+  private static String getRoadwayExtensionSide(SourceFeature sourceFeature, String extensionFeatureType) {
     String value = sourceFeature.getTag(extensionFeatureType) + "";
     String bothValue = sourceFeature.getTag(extensionFeatureType+":both") + "";
     String leftValue = sourceFeature.getTag(extensionFeatureType+":left") + "";
