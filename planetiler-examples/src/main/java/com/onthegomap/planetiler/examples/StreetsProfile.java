@@ -8,7 +8,9 @@ import com.onthegomap.planetiler.Planetiler;
 import com.onthegomap.planetiler.Profile;
 import com.onthegomap.planetiler.VectorTile;
 import com.onthegomap.planetiler.config.Arguments;
-import com.onthegomap.planetiler.examples.utils.LineProcessor;
+import com.onthegomap.planetiler.examples.utils.BarrierHandler;
+import com.onthegomap.planetiler.examples.utils.PathHandler;
+import com.onthegomap.planetiler.examples.utils.RailwayHandler;
 import com.onthegomap.planetiler.examples.utils.StreetsUtils;
 import com.onthegomap.planetiler.examples.parsers.TypeParser;
 import com.onthegomap.planetiler.geo.GeometryException;
@@ -49,7 +51,7 @@ public class StreetsProfile implements Profile {
     if (StreetsUtils.isFireHydrant(sourceFeature)) {
       var feature = features.point("point")
         .setAttr("type", "fireHydrant")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
@@ -59,7 +61,7 @@ public class StreetsProfile implements Profile {
     if (sourceFeature.hasTag("advertising", "column")) {
       var feature = features.point("point")
         .setAttr("type", "adColumn")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
@@ -69,7 +71,7 @@ public class StreetsProfile implements Profile {
     if (StreetsUtils.isMemorial(sourceFeature)) {
       var feature = features.point("point")
         .setAttr("type", "memorial")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature))
         .setAttr("direction", StreetsUtils.getDirection(sourceFeature));
 
@@ -80,7 +82,7 @@ public class StreetsProfile implements Profile {
     if (StreetsUtils.isStatue(sourceFeature)) {
       var feature = features.point("point")
         .setAttr("type", "statue")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature))
         .setAttr("direction", StreetsUtils.getDirection(sourceFeature));
 
@@ -91,7 +93,7 @@ public class StreetsProfile implements Profile {
     if (StreetsUtils.isSculpture(sourceFeature)) {
       var feature = features.point("point")
         .setAttr("type", "sculpture")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature))
         .setAttr("direction", StreetsUtils.getDirection(sourceFeature));
 
@@ -102,7 +104,7 @@ public class StreetsProfile implements Profile {
     if (StreetsUtils.isWindTurbine(sourceFeature)) {
       var feature = features.point("point")
         .setAttr("type", "windTurbine")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
@@ -158,7 +160,7 @@ public class StreetsProfile implements Profile {
 
     if (sourceFeature.hasTag("natural", "rock")) {
       var feature = features.point("point").setAttr("type", "rock")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
@@ -194,10 +196,10 @@ public class StreetsProfile implements Profile {
     if (sourceFeature.hasTag("man_made", "flagpole")) {
       var feature = features.point("point")
         .setAttr("type", "flagpole")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature))
         .setAttr("wikidata", StreetsUtils.getFlagWikidata(sourceFeature))
-        .setAttr("country", StreetsUtils.getFlagCountry(sourceFeature));
+        .setAttr("country", StreetsUtils.getFirstTagValue(sourceFeature, "country").orElse(null));
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
       return;
@@ -206,10 +208,10 @@ public class StreetsProfile implements Profile {
     if (sourceFeature.hasTag("highway", "street_lamp")) {
       var feature = features.point("point")
         .setAttr("type", "streetLamp")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature))
         .setAttr("direction", StreetsUtils.getDirection(sourceFeature))
-        .setAttr("lampSupport", StreetsUtils.getLampSupport(sourceFeature));
+        .setAttr("lampSupport", StreetsUtils.getFirstTagValue(sourceFeature, "support").orElse(null));
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
     }
@@ -218,50 +220,17 @@ public class StreetsProfile implements Profile {
   private static void processLine(SourceFeature sourceFeature, FeatureCollector features) {
     if (sourceFeature.hasTag("highway")
       || sourceFeature.hasTag("aeroway", "runway", "taxiway", "stopway", "model_runway")) {
-      LineProcessor.handlePath(sourceFeature, features);
+      PathHandler.handlePath(sourceFeature, features);
       return;
     }
 
-    if (StreetsUtils.isRailway(sourceFeature)) {
-      var feature = features.line("highways")
-        .setAttr("type", "railway")
-        .setAttr("railwayType", StreetsUtils.getRailwayType(sourceFeature))
-        .setAttr("gauge", StreetsUtils.getGauge(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+    if (RailwayHandler.isRailway(sourceFeature)) {
+      RailwayHandler.handleRailway(sourceFeature, features);
       return;
     }
 
-    if (sourceFeature.hasTag("barrier", "fence")) {
-      var feature = features.line("barriers")
-        .setAttr("type", "fence")
-        .setAttr("fenceType", StreetsUtils.getFenceType(sourceFeature))
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
-        .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
-      return;
-    }
-
-    if (sourceFeature.hasTag("barrier", "hedge")) {
-      var feature = features.line("barriers")
-        .setAttr("type", "wall")
-        .setAttr("wallType", "hedge")
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
-        .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
-      return;
-    }
-
-    if (sourceFeature.hasTag("barrier", "wall")) {
-      var feature = features.line("barriers")
-        .setAttr("type", "wall")
-        .setAttr("wallType", StreetsUtils.getWallType(sourceFeature))
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
-        .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+    if (BarrierHandler.isBarrier(sourceFeature)) {
+      BarrierHandler.handleBarrier(sourceFeature, features);
       return;
     }
 
@@ -330,7 +299,7 @@ public class StreetsProfile implements Profile {
         .setAttr("isPart", isPart)
         .setAttr("buildingType", buildingType)
         .setAttr("name", sourceFeature.getTag("name"))
-        .setAttr("height", StreetsUtils.getHeight(sourceFeature))
+        .setAttr("height", StreetsUtils.getHeight(sourceFeature).orElse(null))
         .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature))
         .setAttr("levels", StreetsUtils.getBuildingLevels(sourceFeature))
         .setAttr("minLevel", StreetsUtils.getBuildingMinLevel(sourceFeature))
@@ -412,7 +381,7 @@ public class StreetsProfile implements Profile {
     if (sourceFeature.hasTag("landuse", "farmland")) {
       var feature = features.polygon("common")
         .setAttr("type", "farmland")
-        .setAttr("crop", StreetsUtils.getCrop(sourceFeature));
+        .setAttr("crop", StreetsUtils.getFirstTagValue(sourceFeature, "crop").orElse(null));
 
       setPolygonOMBB(feature);
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);

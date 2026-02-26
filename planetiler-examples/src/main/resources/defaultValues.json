@@ -163,6 +163,129 @@
       "markings": true
     }
   },
+
+  "railways": {
+    "gauges" : {
+      "broad": 1.676,
+      "standard": 1.435,
+      "narrow": 1.000
+    },
+    "rail": {
+      "type": "railway",
+      "gauge": 1.435
+    },
+    "light_rail": {
+      "type": "railway",
+      "gauge": 1.435
+    },
+    "subway": {
+      "type": "railway",
+      "gauge": 1.435
+    },
+    "disused": {
+      "type": "railway",
+      "gauge": 1.435
+    },
+    "narrow_gauge": {
+      "type": "railway",
+      "gauge": 1.000
+    },
+    "tram": {
+      "type": "tramway",
+      "gauge": 1.435
+    }
+  },
+
+  "barriers": {
+    "fence": {
+      "type": "fence",
+      "material": "wood",
+      "height": 1,
+
+      "wood": {
+        "type": "fence",
+        "material": "wood",
+        "height": 2
+      },
+      "chain_link": {
+        "type": "fence",
+        "material": "chainLink",
+        "height": 3
+      },
+      "wire": {
+        "type": "fence",
+        "material": "chainLink",
+        "height": 3
+      },
+      "temporary": {
+        "type": "fence",
+        "material": "chainLink",
+        "height": 2.5
+      },
+      "barbed_wire": {
+        "type": "fence",
+        "material": "chainLink",
+        "height": 3
+      },
+      "metal": {
+        "type": "fence",
+        "material": "metal",
+        "height": 1.5
+      },
+      "corrugated_metal": {
+        "type": "fence",
+        "material": "metal",
+        "height": 2.5
+      },
+      "railing": {
+        "type": "fence",
+        "material": "metal",
+        "height": 1.5
+      },
+      "concrete": {
+        "type": "fence",
+        "material": "concrete",
+        "height": 2.5
+      }
+    },
+    "wall": {
+      "type": "wall",
+      "material": "concrete",
+      "height": 1,
+
+      "dry_stone": {
+        "type": "wall",
+        "material": "stone",
+        "height": 3
+      },
+      "stone": {
+        "type": "wall",
+        "material": "stone",
+        "height": 3
+      },
+      "brick": {
+        "type": "wall",
+        "material": "stone",
+        "height": 3
+      },
+      "concrete": {
+        "type": "wall",
+        "material": "concrete",
+        "height": 3
+      },
+      "concrete_block": {
+        "type": "wall",
+        "material": "concrete",
+        "height": 3
+      }
+    },
+    "hedge": {
+      "type": "wall",
+      "material": "hedge",
+      "height": 1
+    }
+  },
+
   "materials": {
     "asphalt": "asphalt",
     "paved": "asphalt",

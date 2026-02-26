@@ -9,14 +9,13 @@ import com.onthegomap.planetiler.reader.SourceFeature;
 import com.onthegomap.planetiler.reader.osm.OsmElement;
 import com.onthegomap.planetiler.reader.osm.OsmSourceFeature;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
-
 
 public class StreetsUtils {
   private static final ColorParser colorParser = new ColorParser();
-  private static final DefaultsParser defaultsParser = new DefaultsParser();
 
   private static final List<String> memorialTypes = Arrays.asList(
     "war_memorial", "stele", "obelisk", "memorial", "stone"
@@ -73,17 +72,6 @@ public class StreetsUtils {
     return sourceFeature.hasTag("power", "generator") && sourceFeature.hasTag("generator:source", "wind");
   }
 
-  public static boolean isRailway(SourceFeature sourceFeature) {
-    return sourceFeature.hasTag("railway",
-      "rail",
-      "light_rail",
-      "subway",
-      "disused",
-      "narrow_gauge",
-      "tram"
-    );
-  }
-
   public static boolean isWater(SourceFeature sourceFeature) {
     return sourceFeature.getSource().equals("water") ||
       sourceFeature.hasTag("natural", "water") ||
@@ -93,24 +81,12 @@ public class StreetsUtils {
       );
   }
 
-  public static String getFenceType(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("fence_type"));
-  }
-
-  public static String getWallType(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("wall"));
-  }
-
-  public static String getRailwayType(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("railway"));
-  }
-
   public static String getWaterwayType(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("waterway"));
+    return getFirstValue((String) sourceFeature.getTag("waterway"));
   }
 
   public static Double getTreeHeight(SourceFeature sourceFeature) {
-    return getHeight(sourceFeature);
+    return getHeight(sourceFeature).orElse(null);
 
     /*Double height = getHeight(sourceFeature);
     if (height != null) {
@@ -135,15 +111,15 @@ public class StreetsUtils {
     return null;*/
   }
 
-  public static Double getHeight(SourceFeature sourceFeature) {
+  public static Optional<Double> getHeight(SourceFeature sourceFeature) {
     String height = (String) sourceFeature.getTag("height");
     String estHeight = (String) sourceFeature.getTag("est_height");
 
     if (height != null) {
-      return TypeParser.parseMeters(height);
+      return Optional.ofNullable(TypeParser.parseMeters(height));
     }
 
-    return TypeParser.parseMeters(estHeight);
+    return Optional.ofNullable(TypeParser.parseMeters(estHeight));
   }
 
   public static Double getMinHeight(SourceFeature sourceFeature) {
@@ -159,15 +135,15 @@ public class StreetsUtils {
   }
 
   public static String getRoofMaterial(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("roof:material"));
+    return getFirstValue((String) sourceFeature.getTag("roof:material"));
   }
 
   public static String getRoofShape(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("roof:shape"));
+    return getFirstValue((String) sourceFeature.getTag("roof:shape"));
   }
 
   public static String getBuildingMaterial(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("building:material"));
+    return getFirstValue((String) sourceFeature.getTag("building:material"));
   }
 
   public static Integer getBuildingLevels(SourceFeature sourceFeature) {
@@ -179,12 +155,12 @@ public class StreetsUtils {
   }
 
   public static Integer getBuildingColor(SourceFeature sourceFeature) {
-    String color = getFirstTagValue((String) sourceFeature.getTag("building:colour"));
+    String color = getFirstValue((String) sourceFeature.getTag("building:colour"));
     return colorParser.parseColor(color);
   }
 
   public static Integer getRoofColor(SourceFeature sourceFeature) {
-    String color = getFirstTagValue((String) sourceFeature.getTag("roof:colour"));
+    String color = getFirstValue((String) sourceFeature.getTag("roof:colour"));
     return colorParser.parseColor(color);
   }
 
@@ -221,44 +197,29 @@ public class StreetsUtils {
   public static String getLeafType(SourceFeature sourceFeature) {
     String leafType = (String) sourceFeature.getTag("leaf_type");
 
-    return getFirstTagValue(leafType);
+    return getFirstValue(leafType);
   }
 
   public static String getGenus(SourceFeature sourceFeature) {
-    String genusValue = getFirstTagValue((String) sourceFeature.getTag("genus"));
-    String genusEngValue = getFirstTagValue((String) sourceFeature.getTag("genus:en"));
+    String genusValue = getFirstValue((String) sourceFeature.getTag("genus"));
+    String genusEngValue = getFirstValue((String) sourceFeature.getTag("genus:en"));
 
     return genusValue != null ? genusValue : genusEngValue;
   }
 
   public static Optional<String> getSurface(SourceFeature sourceFeature) {
-    return Optional.ofNullable(getFirstTagValue((String) sourceFeature.getTag("surface")));
-  }
-
-  public static String getGauge(SourceFeature sourceFeature) {
-    return (String) sourceFeature.getTag("gauge");
+    return Optional.ofNullable(getFirstValue((String) sourceFeature.getTag("surface")));
   }
 
   public static String getFlagWikidata(SourceFeature sourceFeature) {
-    String wikidata0 = getFirstTagValue((String) sourceFeature.getTag("flag:wikidata"));
-    String wikidata1 = getFirstTagValue((String) sourceFeature.getTag("subject:wikidata"));
-
-    return wikidata0 != null ? wikidata0 : wikidata1;
+    return getFirstTagValue(sourceFeature, "flag:wikidata")
+      .orElse(getFirstTagValue(sourceFeature, "subject:wikidata")
+        .orElse(null));
   }
 
-  public static String getFlagCountry(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("country"));
-  }
+  @Deprecated
+  public static String getFirstValue(String value) {
 
-  public static String getLampSupport(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("support"));
-  }
-
-  public static String getCrop(SourceFeature sourceFeature) {
-    return getFirstTagValue((String) sourceFeature.getTag("crop"));
-  }
-
-  public static String getFirstTagValue(String value) {
     if (value == null) {
       return null;
     }
@@ -270,6 +231,33 @@ public class StreetsUtils {
     }
 
     return values[0].trim().toLowerCase();
+  }
+  public static String[] getTagValues(SourceFeature sourceFeature, String tag) {
+    String value = (String) sourceFeature.getTag(tag);
+    if (value == null || value.isEmpty()) {
+      return null;
+    }
+    return value.split(";");
+  }
+
+  public static Optional<String> getFirstTagValue(SourceFeature sourceFeature, String tag) {
+    String[] values = getTagValues(sourceFeature, tag);
+    if (values == null) {
+      return Optional.empty();
+    }
+    return Optional.of(values[0].trim().toLowerCase());
+  }
+
+  public static Optional<Double> getLargestTagValue(SourceFeature sourceFeature, String tag) {
+    String[] values = getTagValues(sourceFeature, tag);
+    if (values == null) {
+      return Optional.empty();
+    }
+
+    return Arrays.stream(values)
+      .map(TypeParser::parseDouble)
+      .filter(Objects::nonNull)
+      .max(Comparator.naturalOrder());
   }
 
   public static boolean isUnderground(SourceFeature sourceFeature) {

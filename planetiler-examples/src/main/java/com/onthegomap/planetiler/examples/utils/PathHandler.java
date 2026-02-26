@@ -8,7 +8,7 @@ import com.onthegomap.planetiler.examples.parsers.TypeParser;
 import com.onthegomap.planetiler.reader.SourceFeature;
 import java.util.Optional;
 
-public class LineProcessor {
+public class PathHandler {
   private static final DefaultsParser defaultsParser = new DefaultsParser();
 
   public static class RoadwayLanes {
