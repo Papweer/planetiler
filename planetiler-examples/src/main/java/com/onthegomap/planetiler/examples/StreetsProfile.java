@@ -8,11 +8,12 @@ import com.onthegomap.planetiler.Planetiler;
 import com.onthegomap.planetiler.Profile;
 import com.onthegomap.planetiler.VectorTile;
 import com.onthegomap.planetiler.config.Arguments;
-import com.onthegomap.planetiler.examples.utils.BarrierHandler;
-import com.onthegomap.planetiler.examples.utils.PathHandler;
-import com.onthegomap.planetiler.examples.utils.RailwayHandler;
-import com.onthegomap.planetiler.examples.utils.StreetsUtils;
+import com.onthegomap.planetiler.examples.handlers.BarrierHandler;
+import com.onthegomap.planetiler.examples.handlers.PathHandler;
+import com.onthegomap.planetiler.examples.handlers.RailwayHandler;
+import com.onthegomap.planetiler.examples.handlers.TreeHandler;
 import com.onthegomap.planetiler.examples.parsers.TypeParser;
+import com.onthegomap.planetiler.examples.handlers.WaterHandler;
 import com.onthegomap.planetiler.geo.GeometryException;
 import com.onthegomap.planetiler.reader.SourceFeature;
 import com.onthegomap.planetiler.reader.osm.OsmElement;
@@ -37,14 +38,7 @@ public class StreetsProfile implements Profile {
 
   private static void processPoint(SourceFeature sourceFeature, FeatureCollector features) {
     if (sourceFeature.hasTag("natural", "tree")) {
-      var feature = features.point("point")
-        .setAttr("type", "tree")
-        .setAttr("leafType", StreetsUtils.getLeafType(sourceFeature))
-        .setAttr("genus", StreetsUtils.getGenus(sourceFeature))
-        .setAttr("height", StreetsUtils.getTreeHeight(sourceFeature))
-        .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+      TreeHandler.handleTrees(sourceFeature, features, "node");
       return;
     }
 
@@ -243,23 +237,12 @@ public class StreetsProfile implements Profile {
     }
 
     if (sourceFeature.hasTag("natural", "tree_row")) {
-      var feature = features.line("natural")
-        .setAttr("type", "treeRow")
-        .setAttr("leafType", StreetsUtils.getLeafType(sourceFeature))
-        .setAttr("genus", StreetsUtils.getGenus(sourceFeature))
-        .setAttr("height", StreetsUtils.getTreeHeight(sourceFeature))
-        .setAttr("minHeight", StreetsUtils.getMinHeight(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+      TreeHandler.handleTrees(sourceFeature, features, "way");
       return;
     }
 
     if (sourceFeature.hasTag("waterway")) {
-      var feature = features.line("water")
-        .setAttr("type", "waterway")
-        .setAttr("waterwayType", StreetsUtils.getWaterwayType(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+      WaterHandler.handleWaterway(sourceFeature, features);
     }
 
     if (sourceFeature.hasTag("leisure", "track")) {
@@ -273,12 +256,8 @@ public class StreetsProfile implements Profile {
   }
 
   private boolean processArea(SourceFeature sourceFeature, FeatureCollector features) {
-    if (StreetsUtils.isWater(sourceFeature)) {
-      var feature = features.polygon("water")
-        .setAttr("type", "water");
-
-      setWaterFeatureParams(feature, sourceFeature);
-      return true;
+    if (WaterHandler.isWater(sourceFeature)) {
+      return WaterHandler.handleWaterArea(sourceFeature, features);
     }
 
     if (
@@ -396,17 +375,8 @@ public class StreetsProfile implements Profile {
       return true;
     }
 
-    if (
-      sourceFeature.hasTag("natural", "wood") ||
-        sourceFeature.hasTag("landuse", "forest") ||
-        sourceFeature.hasTag("landcover", "trees")
-    ) {
-      var feature = features.polygon("natural")
-        .setAttr("type", "forest")
-        .setAttr("leafType", StreetsUtils.getLeafType(sourceFeature))
-        .setAttr("genus", StreetsUtils.getGenus(sourceFeature));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+    if (TreeHandler.isForest(sourceFeature)) {
+      TreeHandler.handleTrees(sourceFeature, features, "area");
       return true;
     }
 
@@ -582,16 +552,6 @@ public class StreetsProfile implements Profile {
     if (sourceFeature.isPoint()) {
       processPoint(sourceFeature, features);
     }
-  }
-
-  private static void setWaterFeatureParams(FeatureCollector.Feature feature, SourceFeature sourceFeature) {
-    feature
-      .setZoomRange(9, 16)
-      .setZoomLevels(Arrays.asList(9, 13, 16))
-      .setPixelToleranceAtAllZooms(0)
-      .setMinPixelSize(0)
-      .setMinPixelSizeAtMaxZoom(0)
-      .setMinPixelSizeBelowZoom(13, 2);
   }
 
   public static void main(String[] args) throws Exception {

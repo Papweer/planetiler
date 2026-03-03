@@ -1,10 +1,11 @@
-package com.onthegomap.planetiler.examples.utils;
+package com.onthegomap.planetiler.examples.handlers;
 
 import static java.lang.Math.max;
 
 import com.onthegomap.planetiler.FeatureCollector;
 import com.onthegomap.planetiler.examples.parsers.DefaultsParser;
 import com.onthegomap.planetiler.examples.parsers.TypeParser;
+import com.onthegomap.planetiler.examples.StreetsUtils;
 import com.onthegomap.planetiler.reader.SourceFeature;
 import java.util.Optional;
 

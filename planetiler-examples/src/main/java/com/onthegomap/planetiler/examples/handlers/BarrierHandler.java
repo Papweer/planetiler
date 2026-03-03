@@ -1,7 +1,8 @@
-package com.onthegomap.planetiler.examples.utils;
+package com.onthegomap.planetiler.examples.handlers;
 
 import com.onthegomap.planetiler.FeatureCollector;
 import com.onthegomap.planetiler.examples.parsers.DefaultsParser;
+import com.onthegomap.planetiler.examples.StreetsUtils;
 import com.onthegomap.planetiler.reader.SourceFeature;
 
 public class BarrierHandler {
@@ -22,15 +23,6 @@ public class BarrierHandler {
       defaultBarrierPath = "barriers.wall." + wallType + ".";
     } else {
       defaultBarrierPath = "barriers." + barrierTag + ".";
-    }
-
-    if (fenceType != null) {
-      if (fenceType.equals("temporary") && sourceFeature.id() == 1467283141) {
-        System.out.println(barrierTag + fenceType + wallType);
-        System.out.println(defaultBarrierPath);
-        System.out.println(defaultsParser.getString("barriers.fence.temporary.type"));
-        System.out.println(defaultsParser.getString(defaultBarrierPath + "material").orElse("uesinpkllre"));
-      }
     }
 
     var feature = features.line("barriers")

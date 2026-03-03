@@ -196,6 +196,24 @@
     }
   },
 
+  "waterways": {
+    "river": {
+      "width": 10.0
+    },
+    "stream": {
+      "width": 2.0
+    },
+    "canal": {
+      "width": 8.0
+    },
+    "drain": {
+      "width": 1.0
+    },
+    "ditch": {
+      "width": 1.0
+    }
+  },
+
   "barriers": {
     "fence": {
       "type": "fence",
@@ -283,6 +301,64 @@
       "type": "wall",
       "material": "hedge",
       "height": 1
+    }
+  },
+
+  "trees": {
+    "broadleaved": {
+      "type": "broadleaved",
+    "minHeight": 8,
+    "maxHeight": 12
+    },
+    "needleleaved": {
+      "type": "needleleaved",
+      "minHeight": 10,
+      "maxHeight": 12
+    },
+    "beech": {
+      "type": "beech",
+      "minHeight": 10,
+      "maxHeight": 12
+    },
+    "fagus": {
+      "type": "beech",
+      "minHeight": 10,
+      "maxHeight": 12
+    },
+    "fir": {
+      "type": "fir",
+      "minHeight": 20,
+      "maxHeight": 25
+    },
+    "abies": {
+      "type": "fir",
+      "minHeight": 20,
+      "maxHeight": 25
+    },
+    "linden": {
+      "type": "linden",
+      "minHeight": 10,
+      "maxHeight": 12
+    },
+    "tilia": {
+      "type": "linden",
+      "minHeight": 10,
+      "maxHeight": 12
+    },
+    "linde": {
+      "type": "linden",
+      "minHeight": 10,
+      "maxHeight": 12
+    },
+    "oak": {
+      "type": "oak",
+      "minHeight": 8,
+      "maxHeight": 12
+    },
+    "quercus": {
+      "type": "oak",
+      "minHeight": 8,
+      "maxHeight": 12
     }
   },
 

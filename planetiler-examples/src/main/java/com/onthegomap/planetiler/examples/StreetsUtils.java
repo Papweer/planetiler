@@ -1,8 +1,7 @@
-package com.onthegomap.planetiler.examples.utils;
+package com.onthegomap.planetiler.examples;
 
 import com.onthegomap.planetiler.FeatureCollector;
 import com.onthegomap.planetiler.examples.parsers.ColorParser;
-import com.onthegomap.planetiler.examples.parsers.DefaultsParser;
 import com.onthegomap.planetiler.examples.parsers.DirectionParser;
 import com.onthegomap.planetiler.examples.parsers.TypeParser;
 import com.onthegomap.planetiler.reader.SourceFeature;
@@ -72,45 +71,6 @@ public class StreetsUtils {
     return sourceFeature.hasTag("power", "generator") && sourceFeature.hasTag("generator:source", "wind");
   }
 
-  public static boolean isWater(SourceFeature sourceFeature) {
-    return sourceFeature.getSource().equals("water") ||
-      sourceFeature.hasTag("natural", "water") ||
-      (
-        sourceFeature.hasTag("leisure", "swimming_pool") &&
-        !sourceFeature.hasTag("location", "indoor", "roof")
-      );
-  }
-
-  public static String getWaterwayType(SourceFeature sourceFeature) {
-    return getFirstValue((String) sourceFeature.getTag("waterway"));
-  }
-
-  public static Double getTreeHeight(SourceFeature sourceFeature) {
-    return getHeight(sourceFeature).orElse(null);
-
-    /*Double height = getHeight(sourceFeature);
-    if (height != null) {
-      return height;
-    }
-    // We need minHeight in case tree height is implied from tags other than "height"
-    Double minHeight = getMinHeight(sourceFeature);
-    if (minHeight == null) minHeight = 0d;
-    Double width = parseMeters((String) sourceFeature.getTag("diameter_crown"));
-    if (width != null) {
-      return width * 2 + minHeight;
-    }
-    // Diameter is in millimeters if no unit of measurement is specified
-    Double diameter = parseMillimeters((String) sourceFeature.getTag("diameter"));
-    if (diameter != null) {
-      return diameter * 60 + minHeight;
-    }
-    Double circumference = parseMeters((String) sourceFeature.getTag("circumference"));
-    if (circumference != null) {
-      return circumference / Math.PI * 60 + minHeight;
-    }
-    return null;*/
-  }
-
   public static Optional<Double> getHeight(SourceFeature sourceFeature) {
     String height = (String) sourceFeature.getTag("height");
     String estHeight = (String) sourceFeature.getTag("est_height");
@@ -124,6 +84,12 @@ public class StreetsUtils {
 
   public static Double getMinHeight(SourceFeature sourceFeature) {
     return TypeParser.parseMeters((String) sourceFeature.getTag("min_height"));
+  }
+
+  public static Optional<Double> getRealHeight(SourceFeature sourceFeature) {
+    Optional<Double> height = getHeight(sourceFeature);
+    Double minHeight = Optional.ofNullable(getMinHeight(sourceFeature)).orElse(0d);
+    return height.map(heightD -> heightD - minHeight);
   }
 
   public static Double getRoofHeight(SourceFeature sourceFeature) {
@@ -192,12 +158,6 @@ public class StreetsUtils {
 
   public static Double getAngle(SourceFeature sourceFeature) {
     return TypeParser.parseDouble((String) sourceFeature.getTag("angle"));
-  }
-
-  public static String getLeafType(SourceFeature sourceFeature) {
-    String leafType = (String) sourceFeature.getTag("leaf_type");
-
-    return getFirstValue(leafType);
   }
 
   public static String getGenus(SourceFeature sourceFeature) {
