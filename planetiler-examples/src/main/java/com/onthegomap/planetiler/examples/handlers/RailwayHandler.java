@@ -12,7 +12,7 @@ public class RailwayHandler {
     String railwayType = StreetsUtils.getFirstTagValue(sourceFeature, "railway")
       .orElseThrow();
 
-    var feature = features.line("highways")
+    var feature = features.line("paths")
       .setAttr("type", "railway")
       .setAttr("railwayCategory", defaultsParser.getString("railways."+railwayType+".type")
         .orElse("railway"))

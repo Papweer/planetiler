@@ -3,11 +3,22 @@ package com.onthegomap.planetiler.examples.handlers;
 import static java.lang.Math.max;
 
 import com.onthegomap.planetiler.FeatureCollector;
+import com.onthegomap.planetiler.VectorTile;
 import com.onthegomap.planetiler.examples.parsers.DefaultsParser;
 import com.onthegomap.planetiler.examples.parsers.TypeParser;
 import com.onthegomap.planetiler.examples.StreetsUtils;
+import com.onthegomap.planetiler.geo.GeometryException;
 import com.onthegomap.planetiler.reader.SourceFeature;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
 
 public class PathHandler {
   private static final DefaultsParser defaultsParser = new DefaultsParser();
@@ -26,7 +37,7 @@ public class PathHandler {
 
     String pathCategory = defaultsParser.getString("paths."+pathType+".type").orElse("roadway");
 
-    var feature = features.line("highways")
+    var feature = features.line("paths")
       .setAttr("type", "path")
       .setAttr("pathCategory", pathCategory)
 
@@ -63,6 +74,153 @@ public class PathHandler {
     StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
     feature.setBufferPixels(24);
   }
+
+  public static boolean handlePathArea(SourceFeature sourceFeature, FeatureCollector features) {
+    String pathType = StreetsUtils.getOptionalTag(sourceFeature, "area:highway")
+      .orElseGet(() -> StreetsUtils.getOptionalTag(sourceFeature, "area:aeroway")
+        .orElseGet(() -> StreetsUtils.getOptionalTag(sourceFeature, "highway")
+          .orElseGet(() -> StreetsUtils.getOptionalTag(sourceFeature, "aeroway")
+            .orElseThrow())));
+    String pathCategory = defaultsParser.getString("paths."+pathType+".type").orElse("roadway");
+
+    if (sourceFeature.hasTag("area:highway") || sourceFeature.hasTag("area:aeroway")) {
+      var feature = features.polygon("paths")
+        .setAttr("type", "pathArea")
+        .setAttr("pathCategory", pathCategory)
+        .setAttr("pathType", pathType);
+
+      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+      return true;
+    } else if (sourceFeature.hasTag("highway")) {
+      var feature = features.polygon("paths")
+        .setAttr("type", "pathArea")
+        .setAttr("pathCategory", pathCategory)
+        .setAttr("pathType", pathType)
+        .setAttr("markings", false);
+
+      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
+      return true;
+    }
+    return false;
+  }
+
+  public static void postProcessAreas(List<VectorTile.Feature> items) {
+    // Check if tile has path areas at all to reduce unneeded processing
+    boolean hasPathAreas = false;
+    for (VectorTile.Feature item : items) {
+      if (item.tags().get("type").equals("pathArea")) {
+        hasPathAreas = true;
+        break;
+      }
+    }
+    if (!hasPathAreas) {
+      return;
+    }
+
+    List<VectorTile.Feature> pathAreas = new ArrayList<>();
+    List<VectorTile.Feature> pathLines = new ArrayList<>();
+
+    for (VectorTile.Feature item : items) {
+      if (item.tags().get("type").equals("pathArea")) {
+        pathAreas.add(item);
+      } else {
+        pathLines.add(item);
+      }
+    }
+
+    // Remove all path lines from items; processed versions will be added back at the end
+    items.removeIf(item -> !item.tags().get("type").equals("pathArea"));
+
+    var insideSegments = new ArrayList<VectorTile.Feature>();
+
+    for (VectorTile.Feature area : pathAreas) {
+      Geometry decodedArea;
+      try {
+        decodedArea = area.geometry().decode();
+      } catch (GeometryException ignored) {
+        continue;
+      }
+      PreparedGeometry prep = PreparedGeometryFactory.prepare(decodedArea);
+
+      // Get all lines that intersect the area and sort them by the intersection length
+      List<VectorTile.Feature> intersectingLines = pathLines.stream()
+        .filter(line -> {
+          try {
+            return prep.intersects(line.geometry().decode());
+          } catch (GeometryException e) {
+            return false;
+          }
+        })
+        .sorted(Comparator.comparingDouble((VectorTile.Feature line) -> {
+          try {
+            return line.geometry().decode().intersection(decodedArea).getLength();
+          } catch (GeometryException ignored) {
+            return 0.0;
+          }
+        }).reversed())
+        .toList();
+
+
+      // Tags to transfer from line to area
+      String[] tags = {"material"};
+
+      for (String tag : tags) {
+        if (area.getTag(tag) != null) {
+          continue;
+        }
+        // Prioritize the values of longer segments
+        for (VectorTile.Feature line : intersectingLines) {
+          Object value = line.getTag(tag);
+          if (value != null) {
+            area.setTag(tag, value);
+            break;
+          }
+        }
+      }
+
+      // Split lines on the intersection and add the hasArea tag only on the inside section.
+      // Outside segments are kept in the working set so they can be re-split by subsequent areas.
+      var intersectingSet = new HashSet<>(intersectingLines);
+      var nextLines = new ArrayList<VectorTile.Feature>();
+      for (VectorTile.Feature line : pathLines) {
+        if (!intersectingSet.contains(line)) {
+          // Line does not intersect this area, carry forward unchanged
+          nextLines.add(line);
+          continue;
+        }
+
+        Geometry lineGeometry;
+        try {
+          lineGeometry = line.geometry().decode();
+        } catch (GeometryException ignored) {
+          continue;
+        }
+
+        Geometry insideGeom = lineGeometry.intersection(decodedArea);
+        if (!insideGeom.isEmpty()) {
+          for (int n = 0; n < insideGeom.getNumGeometries(); n++) {
+            VectorTile.Feature inside = line.copyWithNewGeometry(insideGeom.getGeometryN(n))
+              .copyWithExtraAttrs(Map.of("hasArea", true));
+            insideSegments.add(inside);
+          }
+        }
+
+        Geometry outsideGeom = lineGeometry.difference(decodedArea);
+        if (!outsideGeom.isEmpty()) {
+          for (int n = 0; n < outsideGeom.getNumGeometries(); n++) {
+            // Outside segments go back into the working set for the next area
+            nextLines.add(line.copyWithNewGeometry(outsideGeom.getGeometryN(n)));
+          }
+        }
+      }
+
+      pathLines = nextLines;
+    }
+
+    // Add all inside segments (with hasArea) and remaining outside/non-intersecting lines back
+    items.addAll(insideSegments);
+    items.addAll(pathLines);
+}
 
   private static String getPathMaterial(SourceFeature sourceFeature, String pathType) {
     Optional<String> surface = StreetsUtils.getSurface(sourceFeature);
@@ -135,5 +293,12 @@ public class PathHandler {
       return "right";
     }
     return null;
+  }
+
+  public static boolean isPathArea(SourceFeature sourceFeature) {
+    return sourceFeature.hasTag("area:highway")
+      || sourceFeature.hasTag("area:aeroway")
+      || (sourceFeature.hasTag("highway") && StreetsUtils.getOptionalBoolTag(sourceFeature, "area").orElse(false))
+      || (sourceFeature.hasTag("aeroway") && StreetsUtils.getOptionalBoolTag(sourceFeature, "area").orElse(false));
   }
 }

@@ -22,6 +22,7 @@ import com.onthegomap.planetiler.util.MemoryEstimator;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import org.locationtech.jts.algorithm.MinimumAreaRectangle;
@@ -29,6 +30,8 @@ import org.locationtech.jts.algorithm.construct.MaximumInscribedCircle;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
 
 public class StreetsProfile implements Profile {
   @Override
@@ -303,32 +306,17 @@ public class StreetsProfile implements Profile {
     }
 
     if (isArea(sourceFeature)) {
-      if (sourceFeature.hasTag("highway")) {
-        var feature = features.polygon("highways")
-          .setAttr("type", "path")
-          .setAttr("pathType", sourceFeature.getTag("highway"));
-
-        StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
-        return true;
-      }
-
       if (sourceFeature.hasTag("man_made", "pier")) {
         var feature = features.polygon("common")
           .setAttr("type", "pier")
           .setAttr("surface", StreetsUtils.getSurface(sourceFeature));
-
         StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
         return true;
       }
     }
 
-    if (sourceFeature.hasTag("area:highway")) {
-      var feature = features.polygon("highways")
-        .setAttr("type", "path")
-        .setAttr("pathType", sourceFeature.getTag("area:highway"));
-
-      StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
-      return true;
+    if (PathHandler.isPathArea(sourceFeature)) {
+      return PathHandler.handlePathArea(sourceFeature, features);
     }
 
     if (sourceFeature.hasTag("landuse", "brownfield")) {
@@ -632,8 +620,9 @@ public class StreetsProfile implements Profile {
       for (VectorTile.Feature item : items) {
         item.tags().remove("isPart");
       }
+    } else if (layer.equals("paths")) {
+      PathHandler.postProcessAreas(items);
     }
-
     return items;
   }
 
