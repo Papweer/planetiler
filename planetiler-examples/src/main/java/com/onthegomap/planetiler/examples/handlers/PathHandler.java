@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
 
@@ -87,7 +86,8 @@ public class PathHandler {
       var feature = features.polygon("paths")
         .setAttr("type", "pathArea")
         .setAttr("pathCategory", pathCategory)
-        .setAttr("pathType", pathType);
+        .setAttr("pathType", pathType)
+        .setAttr("material", getPathMaterial(sourceFeature, pathType));
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
       return true;
@@ -96,6 +96,7 @@ public class PathHandler {
         .setAttr("type", "pathArea")
         .setAttr("pathCategory", pathCategory)
         .setAttr("pathType", pathType)
+        .setAttr("material", getPathMaterial(sourceFeature, pathType))
         .setAttr("markings", false);
 
       StreetsUtils.setCommonFeatureParams(feature, sourceFeature);
@@ -162,7 +163,7 @@ public class PathHandler {
 
 
       // Tags to transfer from line to area
-      String[] tags = {"material"};
+      String[] tags = {"material", "width" }; // Width used for texture scaling
 
       for (String tag : tags) {
         if (area.getTag(tag) != null) {

@@ -218,7 +218,7 @@
     "fence": {
       "type": "fence",
       "material": "wood",
-      "height": 1,
+      "height": 2,
 
       "wood": {
         "type": "fence",
@@ -269,7 +269,7 @@
     "wall": {
       "type": "wall",
       "material": "concrete",
-      "height": 1,
+      "height": 3,
 
       "dry_stone": {
         "type": "wall",
